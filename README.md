@@ -74,7 +74,7 @@ command './CycleEnumerator graph_folder query_file result_folder method k per_qu
 in which 'graph_folder' specifies the input folder containing the graph and 'query_file' specifies the
 input of the queries. The 'result_folder' parameter sets the folder storing the logs. 'method' denotes the method evaluating queries, which can be 'IDX_DFS', 'IDX_JOIN' and 'PATH_ENUM'. 'k' is the length constraint. The 'per_query_time_limit' parameter configures the
 time budget for the query. If the query cannot be completed within the time limit,
-then the program will terminate the query and return the number of results found. The 'target_number_of_results' parameter sets the maximum number of
+then the program will terminate the query and return the number of results found. The '`target_number_of_results`' parameter sets the maximum number of
 embeddings that you would like to find. If the number of embeddings enumerated
 reaches the limit or all the results have been found, then the program will terminate. If you want to find all results, then omit the 'target_number_of_results' example. 
 

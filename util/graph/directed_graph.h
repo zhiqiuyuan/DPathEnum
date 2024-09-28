@@ -18,6 +18,7 @@ public:
     uint32_t max_num_in_neighbors_;
     uint32_t max_num_out_neighbors_;
 
+// log(deg)->num of vertices
     std::vector<uint32_t> out_degree_distribution;
     std::vector<uint32_t> in_degree_distribution;
 

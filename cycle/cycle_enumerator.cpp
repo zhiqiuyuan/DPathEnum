@@ -127,6 +127,7 @@ uint64_t CycleEnumerator::execute(uint32_t src, uint32_t dst, query_method metho
         clear_bigraph();
     }
     else if (method_ == query_method::PATH_ENUM) {
+        // ! here
         fast_build_bigraph();
         preprocess_time_ = forward_bfs_time_ + backward_bfs_time_ + construct_bigraph_time_;
         if (preliminary_cardinality_estimator()) {
@@ -371,6 +372,7 @@ void CycleEnumerator::fast_build_bigraph() {
     uint32_t num_vertices = digraph_->num_vertices();
     uint32_t updated_values_count = 0;
 
+// v.s
     // Forward breadth-first search.
     if (length_constraint_ > std::numeric_limits<uint8_t>::max()) {
         std::cerr << "The length constraint is greater than uint8_t." << std::endl;
@@ -412,16 +414,22 @@ void CycleEnumerator::fast_build_bigraph() {
     auto forward_bfs_end = std::chrono::high_resolution_clock::now();
     forward_bfs_time_ = std::chrono::duration_cast<std::chrono::nanoseconds>(forward_bfs_end - forward_bfs_start).count();
 
+// v.t
     // Backward breadth-first search.
-    std::vector<std::vector<uint32_t>> temp_buckets((length_constraint_ + 1) * (length_constraint_ + 1));
+    std::vector<std::vector<uint32_t>> temp_buckets((length_constraint_ + 1) * (length_constraint_ + 1)); // X
 
-    // One cache line contains 64 boolean values and each AVX256 instruction can manipulate 32 boolean values.
-    if (num_vertices / updated_values_count > 64 * 32) {
+    // reset visited
+        // when visited has only a few dirty entries (# = updated_values_count)
+        // num_vertices / 32 > 64 * updated_values_count
+        // One cache line contains 64 boolean values and each AVX256 instruction can manipulate 32 boolean values.
+    if (num_vertices / updated_values_count > 64 * 32) { 
+        // op num: 64 * updated_values_count
         for (uint32_t i = 0; i < updated_values_count; ++i) {
             visited_[updated_values_[i]] = false;
         }
     }
     else {
+        // op num: num_vertices / 32
         memset(visited_, 0, sizeof(bool) * num_vertices);
     }
 
@@ -459,6 +467,7 @@ void CycleEnumerator::fast_build_bigraph() {
     auto backward_bfs_end = std::chrono::high_resolution_clock::now();
     backward_bfs_time_ = std::chrono::duration_cast<std::chrono::nanoseconds>(backward_bfs_end - forward_bfs_end).count();
 
+// write X
     // Put vertices into different buckets. Include the src and dst vertex.
     active_vertices_count += 1;
     buckets_ = (uint32_t*)malloc(sizeof(uint32_t) * active_vertices_count);
@@ -476,11 +485,12 @@ void CycleEnumerator::fast_build_bigraph() {
     }
     buckets_offset_[(length_constraint_ + 1) * (length_constraint_ + 1)] = offset;
 
+// H
     // Construct the forward bipartite graph.
     std::vector<uint32_t> temp_bigraph_adj;
     temp_bigraph_adj.reserve(1024);
 
-    std::vector<std::vector<uint32_t>> temp_adj(length_constraint_);
+    std::vector<std::vector<uint32_t>> temp_adj(length_constraint_); // for "bucket sort" v's neighbors
     single_bigraph_offset_ = (uint32_t*)malloc(sizeof(uint32_t) * length_constraint_ * (active_vertices_count + 1));
     memset(single_bigraph_offset_, 0, sizeof(uint32_t) * length_constraint_ * (active_vertices_count + 1));
 
@@ -500,6 +510,7 @@ void CycleEnumerator::fast_build_bigraph() {
             }
         }
 
+        // "sort" out neighbors by distance to t (bucket sort)
         auto out_neighbors = digraph_->out_neighbors(v);
 
         for (uint32_t j = 0; j < out_neighbors.second; ++j) {
@@ -513,12 +524,14 @@ void CycleEnumerator::fast_build_bigraph() {
             }
         }
 
+        // temp_adj to "CSR"
         uint32_t temp_offset = i * length_constraint_;
 
         uint32_t local_degree = 0;
         for (uint32_t j = 0; j < length_constraint_; ++j) {
             single_bigraph_offset_[temp_offset + j] = temp_bigraph_adj.size();
-            temp_bigraph_adj.insert(temp_bigraph_adj.end(), temp_adj[j].begin(), temp_adj[j].end());
+            // vertices in [temp_adj[j].begin(), temp_adj[j].end()) are v's out neighbors that, distance to t = j
+            temp_bigraph_adj.insert(temp_bigraph_adj.end(), temp_adj[j].begin(), temp_adj[j].end()); 
             local_degree += temp_adj[j].size();
             temp_adj[j].clear();
 
@@ -673,7 +686,7 @@ CycleEnumerator::dfs_on_bigraph(uint32_t depth, const uint32_t *order, uint32_t 
     }
 }
 
-void CycleEnumerator::dfs_on_bigraph(uint32_t u, uint32_t k) {
+void CycleEnumerator::dfs_on_bigraph(uint32_t u, uint32_t k) { // entry call: k=0
     stack_[k] = u;
     visited_[u] = true;
 
@@ -691,17 +704,19 @@ void CycleEnumerator::dfs_on_bigraph(uint32_t u, uint32_t k) {
         if (g_exit || count_ >= target_number_results_) goto EXIT;
 
         uint32_t v = single_bigraph_adj_[i];
-        if (v == dst_) {
+        if (v == dst_) { 
             // Emit the result.
             stack_[k + 1] = dst_;
+            // stack_[:k + 1] is a found path
+            // todo dp: check disjointness
             count_ += 1;
         }
-        else if (k == length_constraint_ - 2 && !visited_[v]) {
+        else if (k == length_constraint_ - 2 && !visited_[v]) { 
             // Emit the result.
             stack_[k + 1] = v;
             stack_[k + 2] = dst_;
             count_ += 1;
-            partial_result_count_ += 1;
+            partial_result_count_ += 1; // partial result // stack[:k+1] is a path from s with length = length_constraint_, but doesn't reach t
         }
         else if (!visited_[v]) {
             dfs_on_bigraph(v, k + 1);
@@ -956,7 +971,7 @@ void CycleEnumerator::single_join() {
         if (index_table_.contains(key)) {
             auto partitions = index_table_[key];
             right_cursor_ = partitions.first;
-            for (uint64_t j = 0; j < partitions.second; ++j) {
+            for (uint64_t j = 0; j < partitions.second; ++j) { // for each half-path
                 if(g_exit){
                     return;
                 }
@@ -964,6 +979,8 @@ void CycleEnumerator::single_join() {
                     uint32_t u = right_cursor_[k];
                     if (u == dst_) {
                         count_ += 1;
+                        // left_cursor_[:left_part_length_) + right_cursor_[:right_part_length_) is a found path
+                        // todo dp: check disjointness
                         break;
                     } else if (visited_[u]) {
                         break;
@@ -994,8 +1011,8 @@ void CycleEnumerator::single_join_on_bigraph() {
     right_partial_begin_ = stack_ + min_cut_position_;
     right_partial_end_ = right_partial_begin_ + right_part_length_;
 
-    left_relation_ = (uint32_t*)malloc(sizeof(uint32_t) * left_part_length_ * estimated_left_relation_size_);
-    right_relation_ = (uint32_t*)malloc(sizeof(uint32_t) * right_part_length_ * estimated_right_relation_size_);
+    left_relation_ = (uint32_t*)malloc(sizeof(uint32_t) * left_part_length_ * estimated_left_relation_size_); // R_a
+    right_relation_ = (uint32_t*)malloc(sizeof(uint32_t) * right_part_length_ * estimated_right_relation_size_); // R_b
 
     auto left_dfs_start = std::chrono::high_resolution_clock::now();
     // Allocate the memory for the materialization.
@@ -1015,7 +1032,7 @@ void CycleEnumerator::single_join_on_bigraph() {
                 uint32_t u = buckets_[k];
                 uint32_t* cursor = right_cursor_;
                 right_dfs(u, min_cut_position_);
-                uint64_t temp_count = (right_cursor_ - cursor) / right_part_length_;
+                uint64_t temp_count = (right_cursor_ - cursor) / right_part_length_; // half-path number
                 index_table_[u] = std::make_pair(cursor, temp_count);
             }
         }

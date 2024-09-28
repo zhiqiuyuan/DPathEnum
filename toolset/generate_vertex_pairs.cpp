@@ -137,7 +137,9 @@ int main(int argc, char *argv[]) {
     uint32_t num_vertices = digraph.num_vertices();
     uint32_t num_hot_vertices = (uint32_t)(num_vertices * hot_vertex_percentage);
 
-    std::priority_queue<pi, std::vector<pi>, std::greater<pi>> pq;
+    // top num_hot_vertices (max deg vertices)
+    // pi: (deg, vertex)
+    std::priority_queue<pi, std::vector<pi>, std::greater<pi>> pq; 
     for (uint32_t u = 0; u < num_hot_vertices; ++u) {
         pq.emplace(std::make_pair(digraph.num_neighbors(u), u));
     }

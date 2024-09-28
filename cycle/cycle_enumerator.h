@@ -130,18 +130,21 @@ private:
      */
     uint64_t count_;
     uint32_t *stack_;
-    bool *visited_;
+    bool *visited_; // # = num of vertices
 
     /**
      * Bipartite graph index based method.
+     * index: I(X, H) 
      */
-    std::pair<uint8_t, uint8_t>* distance_;
-    uint32_t* updated_values_;
-    uint32_t* bucket_degree_sum_;
+    std::pair<uint8_t, uint8_t>* distance_; // v.s, v.t 
+    uint32_t* updated_values_; // store which vertices are visited // for reset `visited` in bfs
+    uint32_t* bucket_degree_sum_; // for X
 
+// X
     uint32_t *buckets_offset_;
     uint32_t *buckets_;
 
+// H
     spp::sparse_hash_map<uint32_t, uint32_t> single_bigraph_;
     uint32_t *single_bigraph_offset_;
     uint32_t *single_bigraph_adj_;
@@ -167,7 +170,7 @@ private:
     uint32_t right_part_length_;
     uint32_t *right_partial_begin_;
     uint32_t *right_partial_end_;
-    spp::sparse_hash_map<uint32_t, std::pair<uint32_t*, uint64_t>> index_table_;
+    spp::sparse_hash_map<uint32_t, std::pair<uint32_t*, uint64_t>> index_table_; // pair: paths, path_nums
 
     /**
      * For listing test purpose.
