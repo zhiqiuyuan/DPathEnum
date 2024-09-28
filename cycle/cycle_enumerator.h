@@ -158,19 +158,19 @@ private:
     uint64_t estimated_right_relation_size_;
     uint64_t estimated_result_count_;
 
-    uint32_t *left_relation_;
+    uint32_t *left_relation_; // R_a
     uint64_t left_relation_size_;
     uint32_t *left_cursor_;
     uint32_t *left_partial_begin_;
     uint32_t *left_partial_end_;
     uint32_t left_part_length_;
-    uint32_t *right_relation_;
+    uint32_t *right_relation_; // R_b
     uint64_t right_relation_size_;
     uint32_t *right_cursor_;
     uint32_t right_part_length_;
     uint32_t *right_partial_begin_;
     uint32_t *right_partial_end_;
-    spp::sparse_hash_map<uint32_t, std::pair<uint32_t*, uint64_t>> index_table_; // pair: paths, path_nums
+    spp::sparse_hash_map<uint32_t, std::pair<uint32_t*, uint64_t>> index_table_; // index on R_a // pair: paths, path_nums
 
     /**
      * For listing test purpose.

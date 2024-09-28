@@ -708,7 +708,7 @@ void CycleEnumerator::dfs_on_bigraph(uint32_t u, uint32_t k) { // entry call: k=
             // Emit the result.
             stack_[k + 1] = dst_;
             // stack_[:k + 1] is a found path
-            // todo dp: check disjointness
+            // todo dp (disjoint): check disjoint
             count_ += 1;
         }
         else if (k == length_constraint_ - 2 && !visited_[v]) { 
@@ -957,8 +957,10 @@ void CycleEnumerator::right_dfs(uint32_t u, uint32_t k) {
 }
 
 void CycleEnumerator::single_join() {
+    // todo dp (k): enumerate order of enumerating paths
     left_cursor_ = left_relation_;
     uint32_t left_key_position = left_part_length_ - 1;
+    // for each left half-path (each element in R_a)
     for (uint64_t i = 0; i < left_relation_size_; ++i) {
         // Initialize visited table.
         for (uint32_t j = 0; j < left_part_length_; ++j) {
@@ -967,6 +969,7 @@ void CycleEnumerator::single_join() {
         }
 
         // Join with the partitions.
+        // join with R_b
         uint32_t key = left_cursor_[left_key_position];
         if (index_table_.contains(key)) {
             auto partitions = index_table_[key];
@@ -980,7 +983,7 @@ void CycleEnumerator::single_join() {
                     if (u == dst_) {
                         count_ += 1;
                         // left_cursor_[:left_part_length_) + right_cursor_[:right_part_length_) is a found path
-                        // todo dp: check disjointness
+                        // todo dp (disjoint): check disjoint
                         break;
                     } else if (visited_[u]) {
                         break;

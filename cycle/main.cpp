@@ -98,6 +98,15 @@ int main(int argc, char *argv[]) {
     IO::read(input_query_file, queries);
 
     CycleEnumerator enumerator;
+    // todo dp (k, not hop-constrained): length_constraint increase 
+    // ! ensure k <- hop-constrain vs path enumeration order:
+    // note: result of larger hop-constrain includes that of smaller
+    // ? choice 1: from large (longest path length found by maxflow baseline) 
+    // (each graph: over "all paths in the results for all queries")
+    //      ! since our focus is BatchEnum, choice 1 first (-> BatchEnum ... -> choice 2)
+    //      all query doesn't need to increase length_constraint
+    // ? choice 2: from mild (graph diameter), increase by multiple?
+    //      some query need to increase length_constraint
     enumerator.initialize(&digraph, length_constraint);
     enumerator.target_number_results_ = target_num_results;
     /**

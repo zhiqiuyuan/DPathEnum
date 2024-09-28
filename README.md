@@ -1,3 +1,6 @@
+For comparison with our works (finding specified number of *disjoint* paths; batch queries)
+`todo dp`
+
 # PathEnum
 ## Introduction
 
